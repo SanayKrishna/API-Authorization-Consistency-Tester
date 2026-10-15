@@ -1,0 +1,4 @@
+# --- demo_api ---
+fastapi>=0.110,<1
+uvicorn[standard]>=0.29
+pyjwt>=2.8
