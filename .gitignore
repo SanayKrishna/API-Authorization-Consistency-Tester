@@ -1,0 +1,40 @@
+# Python / JS / TS — bytecode, caches, builds
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# Env & secrets (never commit real credentials)
+.env
+.env.local
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Generated scan history (keep curated examples only)
+reports/scans/
+scans/
+reports/*.json
+reports/*.csv
+reports/*.html
+!reports/.gitkeep
+!reports/example*
+
+# Logs
+*.log
+npm-debug.log*
