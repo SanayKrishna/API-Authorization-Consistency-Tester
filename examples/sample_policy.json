@@ -1,0 +1,24 @@
+{
+  "target_base_url": "http://127.0.0.1:8001",
+  "note": "Tokens below are placeholders. Fetch fresh local-lab JWTs via GET http://127.0.0.1:8001/demo/tokens and paste them in. Never commit real credentials.",
+  "endpoints": [
+    {"id": "me", "path": "/api/users/me", "method": "GET", "requires_auth": true, "allowed_roles": ["admin", "user", "readonly"], "ownership_required": false, "sensitivity": "private", "description": "Own profile"},
+    {"id": "get-user", "path": "/api/users/{id}", "method": "GET", "requires_auth": true, "allowed_roles": ["admin", "user", "readonly"], "ownership_required": true, "sensitivity": "private", "description": "User profile with ownership"},
+    {"id": "put-user", "path": "/api/users/{id}", "method": "PUT", "requires_auth": true, "allowed_roles": ["admin", "user"], "ownership_required": true, "sensitivity": "write", "description": "Update user (secure)", "safe_payload": {"name": "probe"}},
+    {"id": "patch-user", "path": "/api/users/{id}", "method": "PATCH", "requires_auth": true, "allowed_roles": ["admin", "user"], "ownership_required": true, "sensitivity": "write", "description": "Patch user (intentionally vuln in demo)", "safe_payload": {"name": "probe"}},
+    {"id": "admin-stats", "path": "/api/admin/stats", "method": "GET", "requires_auth": true, "allowed_roles": ["admin"], "ownership_required": false, "sensitivity": "admin", "description": "Admin-only stats"},
+    {"id": "public-info", "path": "/api/public/info", "method": "GET", "requires_auth": false, "allowed_roles": ["admin", "user", "readonly", "none"], "ownership_required": false, "sensitivity": "public", "description": "Public endpoint"},
+    {"id": "get-order", "path": "/api/orders/{id}", "method": "GET", "requires_auth": true, "allowed_roles": ["admin", "user"], "ownership_required": true, "sensitivity": "private", "description": "Secure order read"},
+    {"id": "vuln-order", "path": "/vuln/orders/{id}", "method": "GET", "requires_auth": true, "allowed_roles": ["admin", "user"], "ownership_required": true, "sensitivity": "private", "description": "V1 intentional BOLA"},
+    {"id": "vuln-export", "path": "/vuln/admin-export", "method": "GET", "requires_auth": true, "allowed_roles": ["admin"], "ownership_required": false, "sensitivity": "admin", "description": "V2 missing auth"}
+  ],
+  "identities": [
+    {"name": "admin", "role": "admin", "auth_state": "valid", "token": "PASTE_ADMIN_JWT", "own_resource_id": "u_admin", "other_resource_id": "u_alice", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}},
+    {"name": "alice", "role": "user", "auth_state": "valid", "token": "PASTE_ALICE_JWT", "own_resource_id": "u_alice", "other_resource_id": "u_bob", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}},
+    {"name": "bob-as-alice-target", "role": "user", "auth_state": "valid", "token": "PASTE_ALICE_JWT", "own_resource_id": "u_alice", "other_resource_id": "u_bob", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}},
+    {"name": "readonly", "role": "readonly", "auth_state": "valid", "token": "PASTE_READER_JWT", "own_resource_id": "u_ro", "other_resource_id": "u_alice", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}},
+    {"name": "anonymous", "role": "none", "auth_state": "missing", "own_resource_id": "u_alice", "other_resource_id": "u_bob", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}},
+    {"name": "alice-invalid", "role": "user", "auth_state": "invalid", "own_resource_id": "u_alice", "other_resource_id": "u_bob", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}},
+    {"name": "alice-expired", "role": "user", "auth_state": "expired", "own_resource_id": "u_alice", "other_resource_id": "u_bob", "resources": {"get-order": {"own": "o_alice1", "other": "o_bob1"}, "vuln-order": {"own": "o_alice1", "other": "o_bob1"}}}
+  ]
+}
