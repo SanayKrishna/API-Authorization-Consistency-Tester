@@ -1,6 +1,6 @@
 # API Authorization Consistency Tester
 
-Deterministic, policy-driven security testing for REST API authorization — covering role enforcement, authentication states, object-level ownership (BOLA/IDOR), and cross-endpoint consistency.
+Deterministic, policy-driven security testing for REST API authorization. It covers role enforcement, authentication states, object-level ownership (BOLA/IDOR), and cross-endpoint consistency.
 
 Built with **Python 3.11+ / FastAPI / httpx / Pydantic / pytest** on the backend and **React + TypeScript + Vite + Tailwind CSS** on the frontend. Ships with an isolated local demo API containing secure endpoints and three documented intentional vulnerabilities, so every detection claim is reproducible.
 
@@ -29,7 +29,7 @@ Built with **Python 3.11+ / FastAPI / httpx / Pydantic / pytest** on the backend
 
 Authorization bugs are logic bugs. Status codes alone do not prove security: a `200 OK` may still leak another user's data, and a `403` on one endpoint means little if a sibling endpoint or HTTP method enforces a different rule.
 
-This tool tests the **policy you configure** — not hardcoded assumptions about roles or JWTs — and reports only contradictions between expected and observed behavior, with reproducible evidence for each claim.
+This tool tests the **policy you configure**, not hardcoded assumptions about roles or JWTs, and reports only contradictions between expected and observed behavior, with reproducible evidence for each claim.
 
 ## Key capabilities
 
@@ -37,7 +37,7 @@ This tool tests the **policy you configure** — not hardcoded assumptions about
 |---|---|
 | Policy-driven testing | Validated JSON policy: path, method, `requires_auth`, `allowed_roles`, `ownership_required`, `sensitivity`, safe payloads, params/headers, per-endpoint resource overrides |
 | Identity matrix | Roles are examples (`admin`, `user`, `readonly`, `none`), never assumed. Auth states: `valid`, `missing`, `invalid`, `expired` |
-| Object-level checks | Own vs. other resource substitution with response-body leak inspection — not status-code-only verdicts |
+| Object-level checks | Own vs. other resource substitution with response-body leak inspection, so verdicts are not based on status codes alone |
 | Consistency analysis | Flags PUT vs. PATCH, secure vs. sibling-endpoint, and auth vs. no-auth divergences only when the policy demands the same outcome |
 | Transparent classification | Rule-based severity (`Critical / High / Medium / Low / Informational`) plus `confirmed / suspicious / inconclusive` confidence. Failed tests are not all Critical |
 | Reporting | JSON, findings CSV, results CSV, and concise HTML. Tokens and secrets redacted in every artifact |
@@ -66,7 +66,7 @@ backend/
   tests/test_engine.py      # Unit + integration tests
 demo_api/
   app/main.py               # Isolated lab API: synthetic users, orders, JWT
-  VULNS.md                  # Documents V1–V3 and their secure twins
+  VULNS.md                  # Documents V1 to V3 and their secure twins
 frontend/
   src/
     pages/                  # Dashboard, NewScan, Results, Settings
@@ -91,27 +91,27 @@ docs/ARCHITECTURE.md        # Component and data-flow reference
 Prerequisites: **Python 3.11+**, **Node 18+ / npm**, PowerShell or any POSIX shell. No Docker or cloud account needed.
 
 ```powershell
-# 1 — Python environment
+# 1. Python environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1            # macOS/Linux: source .venv/bin/activate
 pip install -r backend/requirements.txt -r demo_api/requirements.txt
 Copy-Item .env.example .env             # macOS/Linux: cp .env.example .env
 
-# 2 — Demo lab API (terminal 1)
+# 2. Demo lab API (terminal 1)
 python -m uvicorn demo_api.app.main:app --host 127.0.0.1 --port 8001
 
-# 3 — Testing backend (terminal 2)
+# 3. Testing backend (terminal 2)
 python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 
-# 4 — Frontend (terminal 3)
+# 4. Frontend (terminal 3)
 cd frontend
 npm install
 npm run dev                             # http://localhost:5173 (proxies /api to :8000)
 
-# 5 — Automated tests
+# 5. Automated tests
 python -m pytest backend/tests/test_engine.py -q
 
-# 6 — Full end-to-end scan (both APIs running, from repo root)
+# 6. Full end-to-end scan (both APIs running, from repo root)
 python scripts/e2e_scan.py
 ```
 
@@ -124,16 +124,16 @@ Production frontend check: `cd frontend && npm run build`.
 
 ## Configuring a scan
 
-### Option A — Web UI (recommended for first run)
+### Option A: web UI (recommended for first run)
 
 1. Open `http://localhost:5173/scans/new`.
 2. Set target to `http://127.0.0.1:8001`.
 3. Paste `examples/sample_policy.json` into the policy editor.
 4. Click **Fetch demo tokens** to inject short-lived local JWTs (never commit real tokens).
 5. Tick **Allow PUT/PATCH/POST/DELETE tests** only if you intend state-changing checks against your isolated lab.
-6. Confirm you are authorized to test the target, then **Launch scan**. Progress is polled from the backend — there is no simulated progress bar.
+6. Confirm you are authorized to test the target, then **Launch scan**. Progress is polled from the backend, so the progress bar reflects the real scan.
 
-### Option B — JSON policy file
+### Option B: JSON policy file
 
 ```jsonc
 {
@@ -180,18 +180,18 @@ Each test records method, rendered path, identity, role, auth state, resource va
 
 Verdict rules:
 
-- `pass` — observed behavior matches policy (including `401`/`403`, and `404` when a denied resource is hidden).
-- `fail` — observed behavior contradicts policy, optionally with confirmed body disclosure.
-- `inconclusive` — timeout, connection failure, `5xx`, blocked redirect, or missing fixture (`404` where access was expected). Inconclusive tests are never marked passed.
+- `pass`: observed behavior matches policy (including `401`/`403`, and `404` when a denied resource is hidden).
+- `fail`: observed behavior contradicts policy, optionally with confirmed body disclosure.
+- `inconclusive`: timeout, connection failure, `5xx`, blocked redirect, or missing fixture (`404` where access was expected). Inconclusive tests are never marked passed.
 
 Findings include a stable ID, endpoint + method, category, severity, expected vs. actual behavior, explanation, step-by-step reproduction, redacted evidence, remediation, confidence, and a fingerprint used for regression diffs.
 
 Severity is intentionally conservative:
 
-- `Critical` — unauthenticated access to admin or write paths; confirmed cross-user writes.
-- `High` — confirmed cross-user reads (BOLA/IDOR); missing auth on sensitive reads.
-- `Medium` — accepted invalid/expired tokens; PUT vs. PATCH divergence; role over-grant on reads.
-- `Low / Informational` — minor inconsistencies and hardening notes.
+- `Critical`: unauthenticated access to admin or write paths; confirmed cross-user writes.
+- `High`: confirmed cross-user reads (BOLA/IDOR); missing auth on sensitive reads.
+- `Medium`: accepted invalid/expired tokens; PUT vs. PATCH divergence; role over-grant on reads.
+- `Low / Informational`: minor inconsistencies and hardening notes.
 
 The dashboard surfaces the latest scan first. The results page supports severity, category, and text filtering, expandable finding details, capped result tables with full CSV/JSON exports, and a previous-scan comparison box.
 
@@ -201,9 +201,9 @@ The demo API uses synthetic users (`admin`, `alice`, `bob`, `readonly`) and orde
 
 | ID | Endpoint | Intended flaw | Secure counterpart |
 |---|---|---|---|
-| V1 | `GET /vuln/orders/{id}` | BOLA — any authenticated user can read any order | `GET /api/orders/{id}` enforces owner-or-admin |
-| V2 | `GET /vuln/admin-export` | Missing authentication — full dump with no credentials | `GET /api/admin/stats` requires an admin JWT |
-| V3 | `PATCH /api/users/{id}` | Inconsistent ownership — `PUT` checks owner, `PATCH` does not | `PUT /api/users/{id}` enforces owner-or-admin |
+| V1 | `GET /vuln/orders/{id}` | BOLA: any authenticated user can read any order | `GET /api/orders/{id}` enforces owner-or-admin |
+| V2 | `GET /vuln/admin-export` | Missing authentication: full dump with no credentials | `GET /api/admin/stats` requires an admin JWT |
+| V3 | `PATCH /api/users/{id}` | Inconsistent ownership: `PUT` checks owner, `PATCH` does not | `PUT /api/users/{id}` enforces owner-or-admin |
 
 > Local lab only. Do not deploy `demo_api` publicly or reuse its signing secret outside this repository.
 
@@ -237,17 +237,17 @@ Flow: `ScanRequest → expand_cases → bounded httpx execution (SSRF-checked) �
 
 Deliberate choices:
 
-- File-based store instead of SQLite — single-operator lab tool with no concurrency requirements.
-- `httpx` async client — explicit timeout, redirect, and connection control.
-- Deterministic rules instead of ML — every severity and category is traceable to `severity.py` and `analyzers.py`.
-- Fixture-aware verdicts — a missing test object yields `inconclusive`, not a vulnerability.
+- File-based store instead of SQLite, because this is a single-operator lab tool with no concurrency requirements.
+- `httpx` async client for explicit timeout, redirect, and connection control.
+- Deterministic rules instead of ML, so every severity and category is traceable to `severity.py` and `analyzers.py`.
+- Fixture-aware verdicts: a missing test object yields `inconclusive`, not a vulnerability.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for module responsibilities.
 
 ## Security model
 
 - Scanning limited to `localhost` / `127.0.0.1` / `::1` plus explicit `ALLOWED_TARGETS`. Anything else is rejected with a safe alternative.
-- DNS is resolved and IP-checked before requests; redirects are revalidated and blocked off-base. Link-local (`169.254.x.x`), multicast, reserved, and — by default — private ranges are refused unless `ALLOW_PRIVATE_TARGETS=true` in an isolated lab.
+- DNS is resolved and IP-checked before requests; redirects are revalidated and blocked off-base. Link-local (`169.254.x.x`), multicast, reserved, and (by default) private ranges are refused unless `ALLOW_PRIVATE_TARGETS=true` in an isolated lab.
 - No credentials in target URLs. No arbitrary redirects followed. TLS verification stays enabled.
 - Timeouts (default 10s), concurrency cap (default 5), and a small rate delay bound scan pressure.
 - State-changing methods are skipped unless `include_destructive: true` is explicitly set for an authorized target.
@@ -296,4 +296,4 @@ Reference end-to-end result against the current demo policy (98 tests):
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). The intentionally vulnerable demo API is provided strictly for local authorized testing.
+MIT, see [`LICENSE`](LICENSE). The intentionally vulnerable demo API is provided strictly for local authorized testing.
